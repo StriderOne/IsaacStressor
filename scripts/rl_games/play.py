@@ -67,7 +67,7 @@ from isaaclab_rl.rl_games import RlGamesGpuEnv, RlGamesVecEnvWrapper
 import isaaclab_tasks  # noqa: F401
 from isaaclab_tasks.utils import get_checkpoint_path, load_cfg_from_registry, parse_env_cfg
 
-import IsaacStressor.tasks  # noqa: F401
+import isaac_stressor.tasks  # noqa: F401
 
 
 def main():

@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""Installation script for the 'IsaacStressor' python package."""
+"""Installation script for the 'isaac_stressor' python package."""
 
 import os
 import toml
@@ -23,8 +23,8 @@ INSTALL_REQUIRES = [
 
 # Installation operation
 setup(
-    name="IsaacStressor",
-    packages=["IsaacStressor"],
+    name="isaac_stressor",
+    packages=["isaac_stressor"],
     author=EXTENSION_TOML_DATA["package"]["author"],
     maintainer=EXTENSION_TOML_DATA["package"]["maintainer"],
     url=EXTENSION_TOML_DATA["package"]["repository"],

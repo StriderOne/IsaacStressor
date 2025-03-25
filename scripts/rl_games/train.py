@@ -70,7 +70,7 @@ from isaaclab_rl.rl_games import RlGamesGpuEnv, RlGamesVecEnvWrapper
 import isaaclab_tasks  # noqa: F401
 from isaaclab_tasks.utils.hydra import hydra_task_config
 
-import IsaacStressor.tasks  # noqa: F401
+import isaac_stressor.tasks  # noqa: F401
 
 
 @hydra_task_config(args_cli.task, "rl_games_cfg_entry_point")
