@@ -149,14 +149,14 @@ class FrankaCabinetIKRelMimicEnv(ManagerBasedRLMimicEnv):
         Returns:
             A dictionary termination signal flags (False or True) for each subtask.
         """
-        # if env_ids is None:
-        #     env_ids = slice(None)
+        if env_ids is None:
+            env_ids = slice(None)
 
-        # signals = dict()
-        # subtask_terms = self.obs_buf["subtask_terms"]
-        # signals["grasp_1"] = subtask_terms["grasp_1"][env_ids]
-        # signals["grasp_2"] = subtask_terms["grasp_2"][env_ids]
-        # signals["stack_1"] = subtask_terms["stack_1"][env_ids]
+        signals = dict()
+        subtask_terms = self.obs_buf["subtask_terms"]
+        signals["approach"] = subtask_terms["approach"][env_ids]
+        signals["grab"] = subtask_terms["grab"][env_ids]
+        signals["opening"] = subtask_terms["opening"][env_ids]
         # # final subtask is placing cubeC on cubeA (motion relative to cubeA) - but final subtask signal is not needed
-        # return signals
-        raise NotImplementedError
+        return signals
+        # raise NotImplementedError
