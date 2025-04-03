@@ -30,6 +30,7 @@ class FrankaCabinetIKRelMimicEnv(ManagerBasedRLMimicEnv):
             env_ids = slice(None)
 
         # Retrieve end effector pose from the observation buffer
+        # print("Buf: ", self.obs_buf)
         eef_pos = self.obs_buf["policy"]["eef_pos"][env_ids]
         eef_quat = self.obs_buf["policy"]["eef_quat"][env_ids]
         # Quaternion format is w,x,y,z
@@ -155,8 +156,8 @@ class FrankaCabinetIKRelMimicEnv(ManagerBasedRLMimicEnv):
         signals = dict()
         subtask_terms = self.obs_buf["subtask_terms"]
         signals["approach"] = subtask_terms["approach"][env_ids]
-        signals["grab"] = subtask_terms["grab"][env_ids]
-        signals["opening"] = subtask_terms["opening"][env_ids]
+        # signals["grab"] = subtask_terms["grab"][env_ids]
+        # signals["opening"] = subtask_terms["opening"][env_ids]
         # # final subtask is placing cubeC on cubeA (motion relative to cubeA) - but final subtask signal is not needed
         return signals
         # raise NotImplementedError
