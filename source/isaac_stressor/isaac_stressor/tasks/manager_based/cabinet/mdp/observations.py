@@ -79,3 +79,10 @@ def gripper_pos(env: ManagerBasedRLEnv, robot_cfg: SceneEntityCfg = SceneEntityC
     finger_joint_2 = -1 * robot_data.joint_pos[:, -2].clone().unsqueeze(1)
 
     return torch.cat((finger_joint_1, finger_joint_2), dim=1)
+
+def gripper_effort(env: ManagerBasedRLEnv, robot_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+    robot_data: ArticulationData = env.scene[robot_cfg.name].data
+    finger_joint_1 = robot_data.applied_torque[:, -1].clone().unsqueeze(1)
+    finger_joint_2 = -1 * robot_data.applied_torque[:, -2].clone().unsqueeze(1)
+
+    return torch.cat((finger_joint_1, finger_joint_2), dim=1)

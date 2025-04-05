@@ -155,6 +155,7 @@ class ObservationsCfg:
         eef_quat = ObsTerm(func=mdp.ee_frame_quat)
 
         gripper_pos = ObsTerm(func=mdp.gripper_pos)
+        gripper_eff = ObsTerm(func=mdp.gripper_effort)
         actions = ObsTerm(func=mdp.last_action)
 
         def __post_init__(self):

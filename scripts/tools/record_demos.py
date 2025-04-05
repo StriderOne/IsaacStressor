@@ -76,61 +76,6 @@ from isaaclab_tasks.utils.parse_cfg import parse_env_cfg
 
 from scipy.spatial.transform import Rotation
 
-def pose_quat_to_rotvec(pose_tensor):
-    """
-    Convert a pose tensor from [x, y, z, qw, qx, qy, qz] to [x, y, z, rotvec_x, rotvec_y, rotvec_z].
-    
-    Args:
-        pose_tensor: torch.Tensor of shape (7,) containing position and quaternion.
-    
-    Returns:
-        torch.Tensor of shape (6,) containing position and rotation vector.
-    """
-    # Extract position and quaternion (order is [x, y, z, qw, qx, qy, qz])
-    pos = pose_tensor[:3].cpu().numpy()  # x, y, z
-    quat = pose_tensor[3:].cpu().numpy()  # qw, qx, qy, qz
-    
-    # Reorder quaternion to [qx, qy, qz, qw] for scipy
-    quat_reordered = [quat[1], quat[2], quat[3], quat[0]]  # [qx, qy, qz, qw]
-    
-    # Convert quaternion to rotation vector
-    rot = Rotation.from_quat(quat_reordered)
-    rotvec = rot.as_euler("xyz")
-    
-    # Combine position and rotvec into a tensor
-    result = torch.tensor([*pos, *rotvec], dtype=pose_tensor.dtype, device=pose_tensor.device)
-    
-    return result
-
-def batch_pose_quat_to_rotvec(pose_tensor):
-    """
-    Convert batched 7D poses (x,y,z, qw, qx, qy, qz) to 6D (x,y,z, rx, ry, rz).
-    
-    Args:
-        pose_tensor: (N, 7) where each row is [x, y, z, qw, qx, qy, qz]
-    
-    Returns:
-        (N, 6) tensor where each row is [x, y, z, rx, ry, rz]
-    """
-    positions = pose_tensor[:3]  # [x, y, z]
-    quaternions = pose_tensor[3:]  # [qw, qx, qy, qz]
-    
-    # Reorder quaternion to SciPy format: [qx, qy, qz, qw]
-    quaternions_reordered = torch.cat([
-        quaternions[1:],  # [qx, qy, qz]
-        quaternions[:1]    # [qw]
-    ], dim=1)
-    
-    # Convert to rotvec (move to CPU for SciPy)
-    rotvecs = Rotation.from_quat(quaternions_reordered.cpu().numpy()).as_euler("xyz")
-    
-    # Combine and return on the same device
-    return torch.cat([
-        positions,
-        torch.tensor(rotvecs, device=pose_tensor.device, dtype=pose_tensor.dtype)
-    ], dim=1)
-
-
 def substract_poses(pose_tensor, goal_tensor):
     pose_positions = pose_tensor[:3]  # [x, y, z]
     pose_quaternions = pose_tensor[3:]  # [qw, qx, qy, qz]
@@ -266,46 +211,35 @@ def main():
 
     # reset before starting
     env.reset()
-    count = 0
-    sleep = False
+
     # simulate environment -- run everything in inference mode
     current_recorded_demo_count = 0
     success_step_count = 0
     with contextlib.suppress(KeyboardInterrupt) and torch.inference_mode():
         while True:
-            if sleep:
-                print("Zzzz")
-                count += 1
-                gripper_command = gripper_goals[current_goal_idx]
-                actions = pre_process_actions(torch.zeros((1, 6), device=env.sim.device), gripper_command)
-                env.step(actions)
-                if count > 25:
-                    count = 0
-                    sleep = False
-                    print("End sleeping")
-                    current_goal_idx = (current_goal_idx + 1) % len(ee_goals)
-                    print(current_goal_idx)
-                    
-                continue
+           
             # get keyboard command
             gripper_command = gripper_goals[current_goal_idx]
             # compute actions based on environment
             ee_pose_w = robot.data.body_state_w[:, robot_entity_cfg.body_ids[0], 0:7]
 
+            # hardcode to make accleration of eef on the last task smaller, otherwise it is too fast and the handle slips out of the gripper
             gain = 1.0
             if current_goal_idx == 3:
                 gain = 0.7
             actions = pre_process_actions(gain*substract_poses(ee_pose_w[0, :], ee_goals[current_goal_idx]), gripper_command)
 
             # perform action on environment
-            env.step(actions)
-            print(current_goal_idx)
-            # print(robot.data.joint_pos[:, robot_entity_cfg.joint_ids])
+            obs, rew, terminated, truncated, info = env.step(actions)
+
+            # check if current goal has been reached
             if torch.allclose(ee_pose_w[0, :3], ee_goals[current_goal_idx, :3], atol=1e-2):
-                current_goal_idx = (current_goal_idx + 1) % len(ee_goals)
+                
                 if (gripper_goals[current_goal_idx] == 1 and gripper_goals[current_goal_idx - 1] == 0):
-                    print("Start sleeping")
-                    sleep = True
+                    if torch.all(torch.abs(obs['policy']['joint_vel'][:, -2:]) < 0.01):
+                        current_goal_idx = (current_goal_idx + 1) % len(ee_goals)
+                else:
+                    current_goal_idx = (current_goal_idx + 1) % len(ee_goals)
          
             if success_term is not None:
                 if bool(success_term.func(env, **success_term.params)[0]):
