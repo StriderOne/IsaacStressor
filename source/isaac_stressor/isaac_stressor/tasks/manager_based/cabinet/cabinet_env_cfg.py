@@ -150,12 +150,12 @@ class ObservationsCfg:
             params={"asset_cfg": SceneEntityCfg("cabinet", joint_names=["drawer_top_joint"])},
         )
         rel_ee_drawer_distance = ObsTerm(func=mdp.rel_ee_drawer_distance)
-        cabinet_orientation = ObsTerm(func=mdp.cabinet_orientation)
+        rel_ee_drawer_yaw = ObsTerm(func=mdp.rel_ee_drawer_yaw)
         eef_pos = ObsTerm(func=mdp.ee_frame_pos)
         eef_quat = ObsTerm(func=mdp.ee_frame_quat)
 
         gripper_pos = ObsTerm(func=mdp.gripper_pos)
-        gripper_eff = ObsTerm(func=mdp.gripper_effort)
+        gripper_vel = ObsTerm(func=mdp.gripper_vel)
         actions = ObsTerm(func=mdp.last_action)
 
         def __post_init__(self):

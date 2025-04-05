@@ -33,10 +33,12 @@ def rel_ee_drawer_distance(env: ManagerBasedRLEnv) -> torch.Tensor:
 
     return cabinet_tf_data.target_pos_w[..., 0, :] - ee_tf_data.target_pos_w[..., 0, :]
 
-def cabinet_orientation(env: ManagerBasedRLEnv) -> torch.Tensor:
+def rel_ee_drawer_yaw(env: ManagerBasedRLEnv) -> torch.Tensor:
+    ee_tf_data: FrameTransformerData = env.scene["ee_frame"].data
     cabinet_tf_data: FrameTransformerData = env.scene["cabinet_frame"].data
-
-    return cabinet_tf_data.target_quat_w[..., 0, :]
+    _, _, cabinet_yaw = math_utils.euler_xyz_from_quat(ee_tf_data.target_quat_w[..., 0, :])
+    _, _, ee_yaw = math_utils.euler_xyz_from_quat(cabinet_tf_data.target_quat_w[..., 0, :])
+    return cabinet_yaw - ee_yaw
 
 
 def fingertips_pos(env: ManagerBasedRLEnv) -> torch.Tensor:
@@ -89,5 +91,12 @@ def gripper_effort(env: ManagerBasedRLEnv, robot_cfg: SceneEntityCfg = SceneEnti
     robot_data: ArticulationData = env.scene[robot_cfg.name].data
     finger_joint_1 = robot_data.applied_torque[:, -1].clone().unsqueeze(1)
     finger_joint_2 = -1 * robot_data.applied_torque[:, -2].clone().unsqueeze(1)
+
+    return torch.cat((finger_joint_1, finger_joint_2), dim=1)
+
+def gripper_vel(env: ManagerBasedRLEnv, robot_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+    robot_data: ArticulationData = env.scene[robot_cfg.name].data
+    finger_joint_1 = robot_data.joint_vel[:, -1].clone().unsqueeze(1)
+    finger_joint_2 = -1 * robot_data.joint_vel[:, -2].clone().unsqueeze(1)
 
     return torch.cat((finger_joint_1, finger_joint_2), dim=1)
