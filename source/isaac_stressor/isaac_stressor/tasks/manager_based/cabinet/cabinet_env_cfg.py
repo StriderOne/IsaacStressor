@@ -150,7 +150,7 @@ class ObservationsCfg:
             params={"asset_cfg": SceneEntityCfg("cabinet", joint_names=["drawer_top_joint"])},
         )
         rel_ee_drawer_distance = ObsTerm(func=mdp.rel_ee_drawer_distance)
-
+        cabinet_orientation = ObsTerm(func=mdp.cabinet_orientation)
         eef_pos = ObsTerm(func=mdp.ee_frame_pos)
         eef_quat = ObsTerm(func=mdp.ee_frame_quat)
 
@@ -195,6 +195,16 @@ class EventCfg:
     )
 
     reset_all = EventTerm(func=mdp.reset_scene_to_default, mode="reset")
+
+    randomize_cabinet_position = EventTerm(
+        func=mdp.randomize_object_pose,
+        mode="reset",
+        params={
+            "pose_range": {"x": (0.8, 0.9), "y": (-0.05, 0.05), "z": (0.4, 0.4), "yaw": (3.0, 3.4)},
+            "min_separation": 0.1,
+            "asset_cfgs": [SceneEntityCfg("cabinet")],
+        },
+    )
 
     reset_robot_joints = EventTerm(
         func=mdp.reset_joints_by_offset,

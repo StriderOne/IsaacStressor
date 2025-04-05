@@ -6,7 +6,7 @@
 from isaaclab.envs.mimic_env_cfg import MimicEnvCfg, SubTaskConfig
 from isaaclab.utils import configclass
 
-from isaaclab_tasks.manager_based.manipulation.cabinet.config.franka.ik_rel_env_cfg import FrankaCabinetEnvCfg
+from isaac_stressor.tasks.manager_based.cabinet.config.franka.ik_rel_env_cfg import FrankaCabinetEnvCfg
 
 
 @configclass

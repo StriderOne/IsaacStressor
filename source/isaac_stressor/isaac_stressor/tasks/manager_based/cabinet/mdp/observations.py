@@ -33,6 +33,11 @@ def rel_ee_drawer_distance(env: ManagerBasedRLEnv) -> torch.Tensor:
 
     return cabinet_tf_data.target_pos_w[..., 0, :] - ee_tf_data.target_pos_w[..., 0, :]
 
+def cabinet_orientation(env: ManagerBasedRLEnv) -> torch.Tensor:
+    cabinet_tf_data: FrameTransformerData = env.scene["cabinet_frame"].data
+
+    return cabinet_tf_data.target_quat_w[..., 0, :]
+
 
 def fingertips_pos(env: ManagerBasedRLEnv) -> torch.Tensor:
     """The position of the fingertips relative to the environment origins."""

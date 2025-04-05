@@ -13,7 +13,7 @@ gym.register(
 
 gym.register(
     id="Isaac-Extended-Cabinet-Franka-IK-Rel-Mimic-v0",
-    entry_point="isaaclab_mimic.envs:FrankaCabinetIKRelMimicEnv",
+    entry_point="isaac_stressor.envs:FrankaCabinetIKRelMimicEnv",
     kwargs={
         "env_cfg_entry_point": "isaac_stressor.envs.franka_cabinet_ik_rel_mimic_env_cfg:FrankaCabinetIKRelMimicEnvCfg",
     },

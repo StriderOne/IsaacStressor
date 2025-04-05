@@ -89,7 +89,8 @@
                 "low_dim": [
                     "eef_pos",
                     "eef_quat",
-                    "rel_ee_drawer_distance"
+                    "rel_ee_drawer_distance",
+                    "cabinet_orientation"
                 ],
                 "rgb": [],
                 "depth": [],

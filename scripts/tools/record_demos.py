@@ -63,13 +63,13 @@ import torch
 
 import omni.log
 
-from isaaclab.devices import Se3HandTracking, Se3Keyboard, Se3SpaceMouse
-from isaaclab.envs import ViewerCfg
+# from isaaclab.devices import Se3HandTracking, Se3Keyboard, Se3SpaceMouse
+# from isaaclab.envs import ViewerCfg
 from isaaclab.envs.mdp.recorders.recorders_cfg import ActionStateRecorderManagerCfg
-from isaaclab.controllers import DifferentialIKController, DifferentialIKControllerCfg
+# from isaaclab.controllers import DifferentialIKController, DifferentialIKControllerCfg
 from isaaclab.managers import SceneEntityCfg
-from isaaclab.envs.ui import ViewportCameraController
-from isaaclab.utils.math import subtract_frame_transforms
+# from isaaclab.envs.ui import ViewportCameraController
+from isaaclab.utils.math import subtract_frame_transforms, combine_frame_transforms
 
 import isaaclab_tasks  # noqa: F401
 from isaaclab_tasks.utils.parse_cfg import parse_env_cfg
@@ -193,18 +193,27 @@ def main():
     robot_entity_cfg = SceneEntityCfg("robot", joint_names=["panda_finger_joint.*"], body_names=["panda_hand"])
     robot_entity_cfg.resolve(env.scene)
     robot = env.scene["robot"]
-    
+    cabinet_data = env.scene["cabinet_frame"].data
     # Define goals for the arm
+    # ee_goals = [
+    #     [0.22, 0, 0.72, 0.5, 0.5, 0.5, 0.5],
+    #     [0.36, 0, 0.72, 0.5, 0.5, 0.5, 0.5],
+    #     [0.36, 0, 0.72, 0.5, 0.5, 0.5, 0.5],
+    #     [0.14, 0, 0.72, 0.5, 0.5, 0.5, 0.5]
+    # ]
     ee_goals = [
-        [0.22, 0, 0.72, 0.5, 0.5, 0.5, 0.5],
-        [0.36, 0, 0.72, 0.5, 0.5, 0.5, 0.5],
-        [0.36, 0, 0.72, 0.5, 0.5, 0.5, 0.5],
-        [0.14, 0, 0.72, 0.5, 0.5, 0.5, 0.5]
+        [0., 0., -0.22, 1., 0., 0., 0.],
+        [0., 0., -0.08, 1., 0., 0., 0.],
+        [0., 0., -0.08, 1., 0., 0., 0.],
+        [0., 0., -0.32, 1., 0., 0., 0.]
     ]
+    ee_goals = torch.tensor(ee_goals, device=env.sim.device)
+    
+    # print("EE goals in world frame:", ee_goals_pos_w, ee_goals_quat_w)
     gripper_goals = [
         0, 0, 1, 1
     ]
-    ee_goals = torch.tensor(ee_goals, device=env.sim.device)
+    
     gripper_goals = torch.tensor(gripper_goals, device=env.sim.device)
     # Track the given command
     current_goal_idx = 0
@@ -223,17 +232,22 @@ def main():
             # compute actions based on environment
             ee_pose_w = robot.data.body_state_w[:, robot_entity_cfg.body_ids[0], 0:7]
 
+            ee_goals_pos_w, ee_goals_quat_w = combine_frame_transforms(
+                cabinet_data.target_pos_w.squeeze(1), cabinet_data.target_quat_w.squeeze(1), ee_goals[current_goal_idx, 0:3].unsqueeze(0), ee_goals[current_goal_idx, 3:7].unsqueeze(0)
+            )
+            ee_goals_w = torch.cat([ee_goals_pos_w, ee_goals_quat_w], dim=1).squeeze(0)
+            
             # hardcode to make accleration of eef on the last task smaller, otherwise it is too fast and the handle slips out of the gripper
             gain = 1.0
             if current_goal_idx == 3:
-                gain = 0.7
-            actions = pre_process_actions(gain*substract_poses(ee_pose_w[0, :], ee_goals[current_goal_idx]), gripper_command)
+                gain = 0.5
+            actions = pre_process_actions(gain*substract_poses(ee_pose_w[0, :], ee_goals_w), gripper_command)
 
             # perform action on environment
             obs, rew, terminated, truncated, info = env.step(actions)
 
             # check if current goal has been reached
-            if torch.allclose(ee_pose_w[0, :3], ee_goals[current_goal_idx, :3], atol=1e-2):
+            if torch.allclose(ee_pose_w[0, :3], ee_goals_w[:3], atol=1e-2):
                 
                 if (gripper_goals[current_goal_idx] == 1 and gripper_goals[current_goal_idx - 1] == 0):
                     if torch.all(torch.abs(obs['policy']['joint_vel'][:, -2:]) < 0.01):
@@ -258,6 +272,8 @@ def main():
                 env.recorder_manager.reset()
                 current_goal_idx = 0
                 env.reset()
+                print(f"Cabinet data: {cabinet_data.target_pos_w, cabinet_data.target_quat_w}")
+    
                 should_reset_recording_instance = False
                 success_step_count = 0
 
