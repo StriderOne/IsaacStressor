@@ -45,6 +45,8 @@ parser.add_argument(
     default=10,
     help="Number of continuous steps with task success for concluding a demo as successful. Default is 10.",
 )
+
+parser.add_argument("--num_envs", type=int, default=2, help="Number of environments to spawn.")
 # append AppLauncher cli args
 AppLauncher.add_app_launcher_args(parser)
 # parse the arguments
@@ -175,14 +177,14 @@ def main():
 
     # modify configuration such that the environment runs indefinitely until
     # the goal is reached or other termination conditions are met
-    env_cfg.terminations.time_out = None
+    # env_cfg.terminations.time_out = None
 
     env_cfg.observations.policy.concatenate_terms = False
 
     env_cfg.recorders: ActionStateRecorderManagerCfg = ActionStateRecorderManagerCfg()
     env_cfg.recorders.dataset_export_dir_path = output_dir
     env_cfg.recorders.dataset_filename = output_file_name
-    env_cfg.scene.num_envs = 10
+    env_cfg.scene.num_envs = args_cli.num_envs
     # create environment
     env = gym.make(args_cli.task, cfg=env_cfg).unwrapped
     should_reset_recording_instance = False
@@ -217,40 +219,40 @@ def main():
     
     gripper_goals = torch.tensor(gripper_goals, device=env.sim.device)
     # Track the given command
-    current_goal_idx = 0
+    current_goal_idx = torch.zeros(env_cfg.scene.num_envs, dtype=torch.long, device=env.sim.device)
 
     # reset before starting
     env.reset()
 
     # simulate environment -- run everything in inference mode
     current_recorded_demo_count = 0
-    success_step_count = 0
+    success_step_count = torch.zeros(env_cfg.scene.num_envs, dtype=torch.long, device=env.sim.device)
     with contextlib.suppress(KeyboardInterrupt) and torch.inference_mode():
         while True:
            
-            # get keyboard command
-            gripper_command = gripper_goals[current_goal_idx]
             # compute actions based on environment
             ee_pose_w = robot.data.body_state_w[:, robot_entity_cfg.body_ids[0], 0:7]
             
             ee_goals_pos_w, ee_goals_quat_w = combine_frame_transforms(
                 cabinet_data.target_pos_w, 
                 cabinet_data.target_quat_w, 
-                ee_goals[current_goal_idx, 0:3].expand_as(cabinet_data.target_pos_w), 
-                ee_goals[current_goal_idx, 3:7].expand_as(cabinet_data.target_quat_w)
+                ee_goals[current_goal_idx, 0:3].unsqueeze(1), 
+                ee_goals[current_goal_idx, 3:7].unsqueeze(1)
             )
        
             ee_goals_w = torch.cat([ee_goals_pos_w, ee_goals_quat_w], dim=2).squeeze(0)
             
             # hardcode to make accleration of eef on the last task smaller, otherwise it is too fast and the handle slips out of the gripper
-            gain = 1.0
-            if current_goal_idx == 3:
-                gain = 0.5
+            
 
             stacked_actions = torch.zeros((env.num_envs, 7), device=env.sim.device)
             for i in range(env.num_envs):
                 # print(ee_pose_w[i, :], ee_goals_w[i, :])
                 # if i == 0:
+                gain = 1.0
+                if current_goal_idx[i] == 3:
+                    gain = 0.5
+                gripper_command = gripper_goals[current_goal_idx[i]]
                 raw_actions = gain*substract_poses(ee_pose_w[i, :], ee_goals_w[i, 0,   :])
                 # else:
                     # raw_actions = 0*substract_poses(ee_pose_w[i, :], ee_goals_w[i, 0,  :])
@@ -266,41 +268,51 @@ def main():
             obs, rew, terminated, truncated, info = env.step(actions)
             # print("OBS: ", obs)
             # check if current goal has been reached
-            if torch.allclose(ee_pose_w[0, :3], ee_goals_w[0, 0, :3], atol=1e-2):
-                
-                if (gripper_goals[current_goal_idx] == 1 and gripper_goals[current_goal_idx - 1] == 0):
-                    if torch.all(torch.abs(obs['policy']['joint_vel'][0, -2:]) < 0.01):
-                        current_goal_idx = (current_goal_idx + 1) % len(ee_goals)
-                else:
-                    current_goal_idx = (current_goal_idx + 1) % len(ee_goals)
+            for i in range(env.num_envs):
+                if torch.allclose(ee_pose_w[i, :3], ee_goals_w[i, 0, :3], atol=1e-2):
+                    
+                    if (gripper_goals[current_goal_idx[i]] == 1 and gripper_goals[current_goal_idx[i] - 1] == 0):
+                        if torch.all(torch.abs(obs['policy']['joint_vel'][i, -2:]) < 0.01):
+                            current_goal_idx[i] = (current_goal_idx[i] + 1) % len(ee_goals)
+                    else:
+                        current_goal_idx[i] = (current_goal_idx[i] + 1) % len(ee_goals)
 
             # print("CHECK: ", success_term.func(env, **success_term.params))
             if success_term is not None:
-                # for i in range(env.num_envs):
-                if torch.all(success_term.func(env, **success_term.params)):
-                    success_step_count += 1
-                    
-                    if success_step_count >= args_cli.num_success_steps:
-                        print(f"For env {i}, success step count: {success_step_count}")
-                        env.recorder_manager.record_pre_reset(None, force_export_or_skip=False)
-                        env.recorder_manager.set_success_to_episodes(
-                            None, success_term.func(env, **success_term.params) # torch.tensor([[True], [True]], dtype=torch.bool, device=env.device)
-                        )
-                        env.recorder_manager.export_episodes()
-                        should_reset_recording_instance = True
-                else:
-                    success_step_count = 0
+                for i in range(env.num_envs):
+                    if success_term.func(env, **success_term.params)[i]:
+                        success_step_count[i] += 1
+                        
+                        if success_step_count[i] >= args_cli.num_success_steps:
+                            print(f"For env {i}, success step count: {success_step_count}")
+                            env.recorder_manager.record_pre_reset([i], force_export_or_skip=False)
+                            env.recorder_manager.set_success_to_episodes(
+                                [i], torch.tensor([[True]], dtype=torch.bool, device=env.device)
+                            )
+                            env.recorder_manager.export_episodes([i])
+                            env.recorder_manager.reset([i])
+                            current_goal_idx[i] = 0
+                            env.reset(env_ids=torch.tensor([i], device=env.device))
+                            success_step_count[i] = 0
+                    else:
+                        success_step_count[i] = 0
+
+                    if env_cfg.terminations.time_out.func(env, **env_cfg.terminations.time_out.params)[i]:
+                        env.recorder_manager.reset([i])
+                        current_goal_idx[i] = 0
+                        env.reset(env_ids=torch.tensor([i], device=env.device))
+                        success_step_count[i] = 0
 # env.reset_to(initial_state, torch.tensor([env_id], device=env.device), is_relative=True)
-                           
-            if should_reset_recording_instance:
-                env.recorder_manager.reset()
-                current_goal_idx = 0
-                env.reset()
-                # env.reset_to(initial_state, torch.tensor([env_id], device=env.device), is_relative=True)
-                # print(f"Cabinet data: {cabinet_data.target_pos_w, cabinet_data.target_quat_w}")
+            
+            # if should_reset_recording_instance:
+            #     env.recorder_manager.reset()
+            #     current_goal_idx = 0
+            #     env.reset()
+            #     # env.reset_to(initial_state, torch.tensor([env_id], device=env.device), is_relative=True)
+            #     # print(f"Cabinet data: {cabinet_data.target_pos_w, cabinet_data.target_quat_w}")
     
-                should_reset_recording_instance = False
-                success_step_count = 0
+            #     should_reset_recording_instance = False
+            #     success_step_count = 0
 
             # print("PAM-PAM", env.recorder_manager.exported_successful_episode_count)
             # print out the current demo count if it has changed

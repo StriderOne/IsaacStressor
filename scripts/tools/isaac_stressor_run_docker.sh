@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Пути (замените на свои)
-ISAAC_PYTHON="python"  # Python IsaacSim
-# ISAAC_PYTHON="/workspace/isaaclab/isaaclab.sh -p" 
+# ISAAC_PYTHON="python"  # Python IsaacSim
+ISAAC_PYTHON="/workspace/isaaclab/isaaclab.sh -p" 
 REGISTER_SCRIPT="scripts/tools/env_registration.py"  # Ваш скрипт регистрации сред
 TARGET_SCRIPT="$1"  # Первый аргумент — запускаемый скрипт (например, record_demos.py)
 
