@@ -3,9 +3,11 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import isaaclab.sim as sim_utils
 from isaaclab.controllers.differential_ik_cfg import DifferentialIKControllerCfg
 from isaaclab.envs.mdp.actions.actions_cfg import DifferentialInverseKinematicsActionCfg
 from isaaclab.utils import configclass
+from isaaclab.sensors import CameraCfg
 
 from . import joint_pos_env_cfg
 
@@ -13,7 +15,6 @@ from . import joint_pos_env_cfg
 # Pre-defined configs
 ##
 from isaaclab_assets.robots.franka import FRANKA_PANDA_HIGH_PD_CFG  # isort: skip
-
 
 @configclass
 class FrankaCabinetEnvCfg(joint_pos_env_cfg.FrankaCabinetEnvCfg):
@@ -35,6 +36,31 @@ class FrankaCabinetEnvCfg(joint_pos_env_cfg.FrankaCabinetEnvCfg):
             body_offset=DifferentialInverseKinematicsActionCfg.OffsetCfg(pos=[0.0, 0.0, 0.107]),
         )
 
+        # Set wrist camera
+        # self.scene.wrist_cam = CameraCfg(
+        #     prim_path="{ENV_REGEX_NS}/Robot/panda_hand/wrist_cam",
+        #     update_period=0.0333,
+        #     height=42,
+        #     width=42,
+        #     data_types=["rgb"],
+        #     spawn=sim_utils.PinholeCameraCfg(
+        #         focal_length=24.0, focus_distance=400.0, horizontal_aperture=20.955, clipping_range=(0.1, 1.0e5)
+        #     ),
+        #     offset=CameraCfg.OffsetCfg(pos=(0.025, 0.0, 0.0), rot=(0.707, 0.0, 0.0, 0.707), convention="ros"),
+        # )
+
+        # Set table view camera
+        self.scene.table_cam = CameraCfg(
+            prim_path="{ENV_REGEX_NS}/table_cam",
+            update_period=0.0333,
+            height=84,
+            width=84,
+            data_types=["rgb"],
+            spawn=sim_utils.PinholeCameraCfg(
+                focal_length=24.0, focus_distance=400.0, horizontal_aperture=20.955, clipping_range=(0.1, 1.0e5)
+            ),
+            offset=CameraCfg.OffsetCfg(pos=(-0.5, 0.0, 1.5), rot=(-0.2988362, 0.6408564, -0.6408564, 0.2988362), convention="ros"),
+        )
 
 @configclass
 class FrankaCabinetEnvCfg_PLAY(FrankaCabinetEnvCfg):

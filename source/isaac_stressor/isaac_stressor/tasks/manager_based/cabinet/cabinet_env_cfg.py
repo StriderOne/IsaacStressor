@@ -18,10 +18,11 @@ from isaaclab.managers import SceneEntityCfg
 from isaaclab.managers import TerminationTermCfg as DoneTerm
 from isaaclab.scene import InteractiveSceneCfg
 from isaaclab.sensors import FrameTransformerCfg
+from isaaclab.sensors import CameraCfg
 from isaaclab.sensors.frame_transformer import OffsetCfg
 from isaaclab.utils import configclass
 from isaaclab.utils.assets import ISAAC_NUCLEUS_DIR
-
+import robomimic
 from . import mdp
 
 ##
@@ -51,6 +52,10 @@ class ExtendedCabinetSceneCfg(InteractiveSceneCfg):
     robot: ArticulationCfg = MISSING
     # End-effector, Will be populated by agent env cfg
     ee_frame: FrameTransformerCfg = MISSING
+
+    # Cameras
+    # wrist_cam: CameraCfg = MISSING
+    table_cam: CameraCfg = MISSING
 
     cabinet = ArticulationCfg(
         prim_path="{ENV_REGEX_NS}/Cabinet",
@@ -89,7 +94,7 @@ class ExtendedCabinetSceneCfg(InteractiveSceneCfg):
     # Frame definitions for the cabinet.
     cabinet_frame = FrameTransformerCfg(
         prim_path="{ENV_REGEX_NS}/Cabinet/sektion",
-        debug_vis=True,
+        debug_vis=False,
         visualizer_cfg=FRAME_MARKER_SMALL_CFG.replace(prim_path="/Visuals/CabinetFrameTransformer"),
         target_frames=[
             FrameTransformerCfg.FrameCfg(
@@ -158,12 +163,36 @@ class ObservationsCfg:
         gripper_vel = ObsTerm(func=mdp.gripper_vel)
         actions = ObsTerm(func=mdp.last_action)
 
+        table_cam = ObsTerm(
+            func=mdp.image, params={"sensor_cfg": SceneEntityCfg("table_cam"), "data_type": "rgb", "normalize": False}
+        )
+        # wrist_cam = ObsTerm(
+        #     func=mdp.image, params={"sensor_cfg": SceneEntityCfg("wrist_cam"), "data_type": "rgb", "normalize": False}
+        # )
+
+
         def __post_init__(self):
             self.enable_corruption = False
             self.concatenate_terms = False
 
-    # observation groups
+    # @configclass
+    # class RGBCameraPolicyCfg(ObsGroup):
+    #     """Observations for policy group with RGB images."""
+
+    #     table_cam = ObsTerm(
+    #         func=mdp.image, params={"sensor_cfg": SceneEntityCfg("table_cam"), "data_type": "rgb", "normalize": False}
+    #     )
+    #     wrist_cam = ObsTerm(
+    #         func=mdp.image, params={"sensor_cfg": SceneEntityCfg("wrist_cam"), "data_type": "rgb", "normalize": False}
+    #     )
+
+    #     def __post_init__(self):
+    #         self.enable_corruption = False
+    #         self.concatenate_terms = False
+
+    # # observation groups
     policy: PolicyCfg = PolicyCfg()
+    # rgb_camera: RGBCameraPolicyCfg = RGBCameraPolicyCfg()
 
 
 @configclass

@@ -182,7 +182,7 @@ def main():
     env_cfg.recorders: ActionStateRecorderManagerCfg = ActionStateRecorderManagerCfg()
     env_cfg.recorders.dataset_export_dir_path = output_dir
     env_cfg.recorders.dataset_filename = output_file_name
-    env_cfg.scene.num_envs = 50
+    env_cfg.scene.num_envs = 10
     # create environment
     env = gym.make(args_cli.task, cfg=env_cfg).unwrapped
     should_reset_recording_instance = False
@@ -194,7 +194,7 @@ def main():
     robot_entity_cfg.resolve(env.scene)
     robot = env.scene["robot"]
     cabinet_data = env.scene["cabinet_frame"].data
-    print(f"Cabinet data: {cabinet_data.target_pos_w.shape}")
+    # print(f"Cabinet data: {cabinet_data.target_pos_w.shape}")
     # Define goals for the arm
     # ee_goals = [
     #     [0.22, 0, 0.72, 0.5, 0.5, 0.5, 0.5],
@@ -251,7 +251,7 @@ def main():
             for i in range(env.num_envs):
                 # print(ee_pose_w[i, :], ee_goals_w[i, :])
                 # if i == 0:
-                raw_actions = gain*substract_poses(ee_pose_w[i, :], ee_goals_w[i, 0,  :])
+                raw_actions = gain*substract_poses(ee_pose_w[i, :], ee_goals_w[i, 0,   :])
                 # else:
                     # raw_actions = 0*substract_poses(ee_pose_w[i, :], ee_goals_w[i, 0,  :])
                 actions = pre_process_actions(raw_actions, gripper_command)
@@ -264,7 +264,7 @@ def main():
             # print("VVVVVV: ", env.action_manager.action)
             # perform action on environment
             obs, rew, terminated, truncated, info = env.step(actions)
-
+            # print("OBS: ", obs)
             # check if current goal has been reached
             if torch.allclose(ee_pose_w[0, :3], ee_goals_w[0, 0, :3], atol=1e-2):
                 
@@ -274,7 +274,7 @@ def main():
                 else:
                     current_goal_idx = (current_goal_idx + 1) % len(ee_goals)
 
-            print("CHECK: ", success_term.func(env, **success_term.params))
+            # print("CHECK: ", success_term.func(env, **success_term.params))
             if success_term is not None:
                 # for i in range(env.num_envs):
                 if torch.all(success_term.func(env, **success_term.params)):
@@ -302,7 +302,7 @@ def main():
                 should_reset_recording_instance = False
                 success_step_count = 0
 
-            print("PAM-PAM", env.recorder_manager.exported_successful_episode_count)
+            # print("PAM-PAM", env.recorder_manager.exported_successful_episode_count)
             # print out the current demo count if it has changed
             if env.recorder_manager.exported_successful_episode_count > current_recorded_demo_count:
                 current_recorded_demo_count = env.recorder_manager.exported_successful_episode_count
