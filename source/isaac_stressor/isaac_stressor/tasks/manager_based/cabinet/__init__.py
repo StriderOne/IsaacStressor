@@ -3,8 +3,4 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""
-Config-based workflow environments.
-"""
-
-import gymnasium as gym
+"""Manipulation environments to open drawers in a cabinet."""

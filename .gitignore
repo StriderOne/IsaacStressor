@@ -1,3 +1,8 @@
+# assets
+assets/colloseum_rvt
+assets/arx5_description
+datasets
+
 # C++
 **/cmake-build*/
 **/build*/
