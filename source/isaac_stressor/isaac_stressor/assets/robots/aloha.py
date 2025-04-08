@@ -15,7 +15,7 @@ import os
 import isaac_stressor
 
 BASE_DIR = os.path.dirname(os.path.abspath(isaac_stressor.__file__))
-ROBOT_USD = "aloloha_v03_cameras2.usd"
+ROBOT_USD = "aloha_description/aloloha_v03_cameras2.usd"
 
 ##
 # Configuration
