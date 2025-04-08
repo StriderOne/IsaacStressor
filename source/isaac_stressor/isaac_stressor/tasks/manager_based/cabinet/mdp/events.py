@@ -74,7 +74,6 @@ def randomize_object_pose(
             pose_tensor = torch.tensor([pose_list[i]], device=env.device)
             positions = pose_tensor[:, 0:3] + env.scene.env_origins[cur_env, 0:3]
             orientations = math_utils.quat_from_euler_xyz(pose_tensor[:, 3], pose_tensor[:, 4], pose_tensor[:, 5])
-            print(f"New pose: {torch.cat([positions, orientations], dim=-1)}")
             asset.write_root_pose_to_sim(
                 torch.cat([positions, orientations], dim=-1), env_ids=torch.tensor([cur_env], device=env.device)
             )

@@ -2,6 +2,7 @@
 assets/colloseum_rvt
 assets/arx5_description
 datasets
+results.csv
 
 # C++
 **/cmake-build*/

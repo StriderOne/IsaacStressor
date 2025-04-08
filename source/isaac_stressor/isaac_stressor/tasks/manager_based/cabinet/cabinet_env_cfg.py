@@ -55,12 +55,13 @@ class ExtendedCabinetSceneCfg(InteractiveSceneCfg):
 
     # Cameras
     # wrist_cam: CameraCfg = MISSING
-    table_cam: CameraCfg = MISSING
+    # table_cam: CameraCfg = MISSING
 
     cabinet = ArticulationCfg(
         prim_path="{ENV_REGEX_NS}/Cabinet",
         spawn=sim_utils.UsdFileCfg(
             usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Sektion_Cabinet/sektion_cabinet_instanceable.usd",
+            # usd_path=f"/home/homa/Downloads/cabinet_test/cabinet.usd",
             activate_contact_sensors=False,
         ),
         init_state=ArticulationCfg.InitialStateCfg(
@@ -163,9 +164,9 @@ class ObservationsCfg:
         gripper_vel = ObsTerm(func=mdp.gripper_vel)
         actions = ObsTerm(func=mdp.last_action)
 
-        table_cam = ObsTerm(
-            func=mdp.image, params={"sensor_cfg": SceneEntityCfg("table_cam"), "data_type": "rgb", "normalize": False}
-        )
+        # table_cam = ObsTerm(
+        #     func=mdp.image, params={"sensor_cfg": SceneEntityCfg("table_cam"), "data_type": "rgb", "normalize": False}
+        # )
         # wrist_cam = ObsTerm(
         #     func=mdp.image, params={"sensor_cfg": SceneEntityCfg("wrist_cam"), "data_type": "rgb", "normalize": False}
         # )

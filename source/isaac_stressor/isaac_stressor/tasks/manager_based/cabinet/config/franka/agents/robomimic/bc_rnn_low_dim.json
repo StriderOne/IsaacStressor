@@ -92,7 +92,7 @@
                     "gripper_pos",
                     "gripper_vel"
                 ],
-                "rgb": ["table_cam"],
+                "rgb": [],
                 "depth": [],
                 "scan": []
             }

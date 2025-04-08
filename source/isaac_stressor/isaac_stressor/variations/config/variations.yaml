@@ -1,0 +1,22 @@
+# Config for variations
+
+variations:
+  - name: randomize_cabinet_texture
+    func: isaac_stressor.tasks.manager_based.cabinet.mdp.randomize_visual_texture_material
+    mode: reset
+    parameters:
+      asset_cfg: SceneEntityCfg("cabinet")
+      texture_paths: [
+          "{NVIDIA_NUCLEUS_DIR}/Materials/Base/Wood/Bamboo_Planks/Bamboo_Planks_BaseColor.png"
+      ]
+      event_name: object_panel_visual_texture
+      texture_rotation: (math.pi / 2, math.pi / 2)
+
+  - name: cabinet_physics_material
+    func: isaac_stressor.tasks.manager_based.cabinet.mdp.randomize_rigid_body_mass
+    mode: reset
+    parameters:
+        asset_cfg: SceneEntityCfg("cabinet")
+        mass_distribution_params: (1.0, 0.2)
+        operation: scale
+        distribution: gaussian
