@@ -92,7 +92,7 @@
                     "gripper_pos",
                     "gripper_vel"
                 ],
-                "rgb": ["table_cam"],
+                "rgb": ["table_cam", "wrist_cam"],
                 "depth": [],
                 "scan": []
             }
@@ -109,10 +109,10 @@
                 "core_kwargs": {
                     "feature_dimension": 64,
                     "flatten": true,
-                    "backbone_class": "ResNet18Conv",
+                    "backbone_class": "R3MConv",
                     "backbone_kwargs": {
-                        "pretrained": true,
-                        "input_coord_conv": false
+                        "r3m_model_class": "resnet18",
+                        "freeze": true    
                     },
                     "pool_class": "SpatialSoftmax",
                     "pool_kwargs": {

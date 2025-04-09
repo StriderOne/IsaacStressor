@@ -22,7 +22,8 @@ from isaaclab.sensors import CameraCfg
 from isaaclab.sensors.frame_transformer import OffsetCfg
 from isaaclab.utils import configclass
 from isaaclab.utils.assets import ISAAC_NUCLEUS_DIR
-import robomimic
+from isaaclab.utils.assets import NVIDIA_NUCLEUS_DIR
+import math
 from . import mdp
 
 ##
@@ -166,9 +167,9 @@ class ObservationsCfg:
         table_cam = ObsTerm(
             func=mdp.image, params={"sensor_cfg": SceneEntityCfg("table_cam"), "data_type": "rgb", "normalize": False}
         )
-        # wrist_cam = ObsTerm(
-        #     func=mdp.image, params={"sensor_cfg": SceneEntityCfg("wrist_cam"), "data_type": "rgb", "normalize": False}
-        # )
+        wrist_cam = ObsTerm(
+            func=mdp.image, params={"sensor_cfg": SceneEntityCfg("wrist_cam"), "data_type": "rgb", "normalize": False}
+        )
 
 
         def __post_init__(self):
@@ -220,6 +221,19 @@ class EventCfg:
             "dynamic_friction_range": (1.25, 1.5),
             "restitution_range": (0.0, 0.0),
             "num_buckets": 16,
+        },
+    )
+
+    randomize_cabinet_texture = EventTerm(
+        func=mdp.randomize_visual_texture_material,
+        mode="startup",
+        params={
+            "asset_cfg": SceneEntityCfg("cabinet", body_names="drawer_handle_top"),
+            "texture_paths": [
+                f"{NVIDIA_NUCLEUS_DIR}/Materials/Base/Wood/Timber/Timber_BaseColor.png",
+            ],
+            "event_name": "object_panel_visual_texture",
+            "texture_rotation": (math.pi / 2, math.pi / 2),
         },
     )
 

@@ -37,17 +37,17 @@ class FrankaCabinetEnvCfg(joint_pos_env_cfg.FrankaCabinetEnvCfg):
         )
 
         # Set wrist camera
-        # self.scene.wrist_cam = CameraCfg(
-        #     prim_path="{ENV_REGEX_NS}/Robot/panda_hand/wrist_cam",
-        #     update_period=0.0333,
-        #     height=42,
-        #     width=42,
-        #     data_types=["rgb"],
-        #     spawn=sim_utils.PinholeCameraCfg(
-        #         focal_length=24.0, focus_distance=400.0, horizontal_aperture=20.955, clipping_range=(0.1, 1.0e5)
-        #     ),
-        #     offset=CameraCfg.OffsetCfg(pos=(0.025, 0.0, 0.0), rot=(0.707, 0.0, 0.0, 0.707), convention="ros"),
-        # )
+        self.scene.wrist_cam = CameraCfg(
+            prim_path="{ENV_REGEX_NS}/Robot/panda_hand/wrist_cam",
+            update_period=0.0333,
+            height=84,
+            width=84,
+            data_types=["rgb"],
+            spawn=sim_utils.PinholeCameraCfg(
+                focal_length=24.0, focus_distance=400.0, horizontal_aperture=20.955, clipping_range=(0.1, 1.0e5)
+            ),
+            offset=CameraCfg.OffsetCfg(pos=(0.025, 0.0, 0.0), rot=(0.707, 0.0, 0.0, 0.707), convention="ros"),
+        )
 
         # Set table view camera
         self.scene.table_cam = CameraCfg(
