@@ -46,6 +46,29 @@ from isaac_stressor.variations.variation_manager import VariationManager
 from isaaclab.managers import ActionManager, EventManager, ObservationManager, RecorderManager
 from isaaclab.scene import InteractiveScene
 
+import importlib
+from omegaconf import DictConfig
+
+def get_variation_manager_cfg(env_name: str) -> DictConfig:
+    # Get the gym registration entry
+    gym_spec = gym.spec(env_name)
+    if gym_spec is None:
+        raise ValueError(f"Environment {env_name} is not registered")
+    
+    # Get the entry point path
+    cfg_entry_point = gym_spec.kwargs["variation_manager_cfg_entry_point"]
+    
+    # Split into module and class name
+    module_path, class_name = cfg_entry_point.split(":")
+    
+    # Import the module
+    module = importlib.import_module(module_path)
+    
+    # Get the class
+    cfg_class = getattr(module, class_name)
+    
+    # Create and return the config object
+    return cfg_class()
 
 def rollout(policy, env, horizon, device):
     policy.start_episode
@@ -58,7 +81,7 @@ def rollout(policy, env, horizon, device):
         for ob in obs:
             obs[ob] = torch.squeeze(obs[ob])
         traj["obs"].append(obs)
-
+        #TODO
         # obs["table_cam"] = obs["table_cam"].permute(2, 0, 1)    # change to (C, H, W) for inference
     
         # Compute actions
@@ -84,13 +107,6 @@ def rollout(policy, env, horizon, device):
 def main():
     """Run a trained policy from robomimic with Isaac Lab environment."""
 
-    import yaml
-
-    # Load variations configuration from YAML file
-    with open("/home/homa/IsaacStressor/source/isaac_stressor/isaac_stressor/variations/config/variations.yaml", "r") as file:
-        variations_cfg = yaml.safe_load(file)
-
-
     # parse configuration
     env_cfg = parse_env_cfg(args_cli.task, device=args_cli.device, num_envs=1, use_fabric=not args_cli.disable_fabric)
 
@@ -103,11 +119,11 @@ def main():
     # Disable recorder
     env_cfg.recorders = None
 
-    variation_manager = VariationManager()
+    variation_manager_cfg = get_variation_manager_cfg(args_cli.task)
+    variation_manager = VariationManager(variation_manager_cfg)
 
     # print(len(variation_manager.generate_config(env_cfg, variations_cfg)))
-    modified_env_cfg = variation_manager.generate_config(env_cfg, args_cli.variation)
-
+    modified_env_cfg = variation_manager.generate_env_config(env_cfg, args_cli.variation)
     env = gym.make(args_cli.task, cfg=modified_env_cfg).unwrapped
     # env.scene.cabinet = InteractiveScene(env_cfg.scene)
     # env.event_manager = EventManager(modified_env_cfg.events, env)
@@ -120,7 +136,7 @@ def main():
 
     # Acquire device
     device = TorchUtils.get_torch_device(try_to_use_cuda=True)
-
+    
     # Load policy
     policy, _ = FileUtils.policy_from_checkpoint(ckpt_path=args_cli.checkpoint, device=device, verbose=True)
 
@@ -136,8 +152,9 @@ def main():
     print(f"Success rate: {results.count(True) / len(results)}")
     print(f"Trial Results: {results}\n")
 
-   
     env.close()
+
+    
         
    
 if __name__ == "__main__":

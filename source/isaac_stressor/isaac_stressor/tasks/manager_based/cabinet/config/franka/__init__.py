@@ -10,7 +10,8 @@ import os
 
 from . import (
     agents,
-    ik_rel_env_cfg
+    ik_rel_env_cfg,
+    variations_cfg
 )
 
 gym.register(
@@ -19,7 +20,7 @@ gym.register(
     kwargs={
         "env_cfg_entry_point": f"{__name__}.ik_rel_env_cfg:FrankaCabinetEnvCfg",
         "robomimic_bc_cfg_entry_point": os.path.join(agents.__path__[0], "robomimic/bc_rnn_low_dim.json"),
-
+        "variation_manager_cfg_entry_point": f"{__name__}.variations_cfg:FrankaCabinetVariantionsCfg",
     },
     disable_env_checker=True,
 )

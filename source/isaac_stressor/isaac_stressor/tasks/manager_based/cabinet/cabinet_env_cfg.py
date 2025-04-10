@@ -9,6 +9,7 @@ from dataclasses import MISSING
 import isaaclab.sim as sim_utils
 from isaaclab.actuators.actuator_cfg import ImplicitActuatorCfg
 from isaaclab.assets import ArticulationCfg, AssetBaseCfg
+from isaaclab.assets import AssetBaseCfg, RigidObject, RigidObjectCfg
 from isaaclab.envs import ManagerBasedRLEnvCfg
 from isaaclab.managers import EventTermCfg as EventTerm
 from isaaclab.managers import ObservationGroupCfg as ObsGroup
@@ -47,7 +48,7 @@ class ExtendedCabinetSceneCfg(InteractiveSceneCfg):
     This is the abstract base implementation, the exact scene is defined in the derived classes
     which need to set the robot and end-effector frames
     """
-
+    replicate_physics = False
     # robots, Will be populated by agent env cfg
     robot: ArticulationCfg = MISSING
     # End-effector, Will be populated by agent env cfg
@@ -56,6 +57,19 @@ class ExtendedCabinetSceneCfg(InteractiveSceneCfg):
     # Cameras
     # wrist_cam: CameraCfg = MISSING
     # table_cam: CameraCfg = MISSING
+
+    cube: RigidObjectCfg = RigidObjectCfg(
+        prim_path="{ENV_REGEX_NS}/cube",
+        spawn=sim_utils.CuboidCfg(
+            size=(0.2, 0.2, 0.2),
+            rigid_props=sim_utils.RigidBodyPropertiesCfg(max_depenetration_velocity=1.0, disable_gravity=True),
+            mass_props=sim_utils.MassPropertiesCfg(mass=1.0),
+            physics_material=sim_utils.RigidBodyMaterialCfg(),
+            visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.5, 0.0, 0.0)),
+        ),
+        init_state=RigidObjectCfg.InitialStateCfg(pos=(0.0, 0.0, 5)),
+    )
+
 
     cabinet = ArticulationCfg(
         prim_path="{ENV_REGEX_NS}/Cabinet",
